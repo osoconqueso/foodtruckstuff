@@ -1,5 +1,6 @@
 <?php
 include('./class_lib/SearchResults.php');
+include('./class_lib/Business.php');
 
 //set locations - TODO: let the user set this
 $location = 'Austin, TX';
@@ -9,7 +10,12 @@ $sort = 1;
 $search = new SearchResults($location, $category_filter, $sort);
 
 echo '<pre>';
-print_r($search->results->businesses);
+foreach( $search->results->businesses as $business) {
+
+    $biz = new Business($business->id);
+    print_r($biz);
+}
+
 
 
 ?>
