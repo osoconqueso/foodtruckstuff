@@ -1,8 +1,9 @@
 <?php
-include_once('OAuth.php');
+include('Mysql.php');
 
-class SearchResults
+class Business
 {
+
 
     /**
      * Yelp consumer key for OAUTH
@@ -40,50 +41,126 @@ class SearchResults
     public $api_host = 'api.yelp.com';
 
     /**
-     * Search path for Yelp API
+     * business extention to search
      *
      * @var string
      */
-    public $search_path = '/v2/search/';
+    public $business_path = '/v2/business/';
 
     /**
-     * Location to search the Yelp API
+     * Business ID of food truck
      *
      * @var string
      */
-    public $location;
+    private $business_id;
 
     /**
-     * The category to search the Yelp API
-     *
-     * @var string
-     */
-    public $category_filter;
-
-    /**
-     * Sorting the results of the Yelp API - 0 = Best Match, 1 = Distance, 2 = Highest Rated
-     *
-     * @var string
-     */
-    public $sort;
-
-    /**
-     * The Json results of the search done using the Yelp API
+     * The json results of the business query
      *
      * @var object
      */
-    public $results;
+    public $business_results;
+
+    /**
+     * Name of the food truck
+     *
+     * @var string
+     */
+    public $name;
+
+    /**
+     * the image url for the food truck
+     *
+     * @var string
+     */
+    public $image_url;
+
+    /**
+     * The yelp url for the food truck
+     *
+     * @var string
+     */
+    public $url;
+
+    /**
+     * Yelp mobile url for the food truck
+     *
+     * @var string
+     */
+    public $mobile_url;
+
+    /**
+     * phone number in a displayable format
+     *
+     * @var string
+     */
+    public $display_phone;
+
+    /**
+     * The number of reviews
+     *
+     * @var int
+     */
+    public $review_count;
+
+    /**
+     * Current user rating of the food truck
+     *
+     * @var double
+     */
+    public $rating;
+
+    /**
+     * latitude of the food truck based on yelp
+     *
+     * @var double
+     */
+    public $lat;
+
+    /**
+     * longitude of the food truck base on yelp
+     *
+     * @var double
+     */
+    public $lng;
+
+    //TODO: Add any additional fields we want to capture
 
 
-    public function __construct($location, $category_filter, $sort)
+    public function __construct($business_id)
     {
-        $this->location = $location;
-        $this->category_filter = $category_filter;
-        $this->sort = $sort;
 
-        $this->results = json_decode($this->search());
+        $this->business_id = $business_id;
 
+        //get the specific business results
+        $this->business_results = json_decode($this->get_business());
 
+        //assign the results
+        $this->name = $this->business_results->name;
+        $this->image_url = $this->business_results->image_url;
+        $this->url = $this->business_results->url;
+        $this->mobile_url = $this->business_results->mobile_url;
+        $this->display_phone = $this->business_results->display_phone;
+        $this->review_count = $this->business_results->review_count;
+        $this->rating = $this->business_results->rating;
+        $this->lat = $this->business_results->location->coordinate->latitude;
+        $this->lng = $this->business_results->location->coordinate->longitude;
+
+        //TODO: check if the business already exists and update instead of insert
+        //insert into the database
+        $this->insert_business();
+
+    }
+
+    /**
+     *returns the business results in JSON
+     *
+     * @return object
+     */
+    private function get_business()
+    {
+        $business_path = $this->business_path . urlencode($this->business_id);
+        return $this->request($business_path);
     }
 
     /**
@@ -150,6 +227,7 @@ class SearchResults
      */
     private function search()
     {
+
         //set empty parameter array
         $url_params = array();
 
@@ -165,6 +243,30 @@ class SearchResults
         return $this->request($search_path);
     }
 
+    /**
+     * Inserts the results into the database
+     *
+     * @return void
+     */
+    private function insert_business()
+    {
+        $mysql = Mysql::get_Instance();
+
+        $query = $mysql->db->prepare('INSERT INTO trucks (name, url, phone, rating, lat, lng) ' .
+            'VALUES (?,?,?,?,?,?)');
+        $query->execute(array(
+            $this->name,
+            $this->mobile_url,
+            $this->display_phone,
+            $this->rating,
+            $this->lat,
+            $this->lng
+        ));
+
+        echo $query->errorInfo();
+
+
+    }
 }
 
 

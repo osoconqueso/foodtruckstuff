@@ -17,7 +17,7 @@ class Mysql
     {
 
         $host_name = "localhost";
-        $database = "food_truck";
+        $database = "foodTrucks";
         $user_name = "root";
         $password = "root";
 
